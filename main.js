@@ -4,12 +4,11 @@ const cors = require('cors')
 
 const redisClient = require('./redisClient')
 
-const {response} = require("express");
-
 const app = express();
+app.use(express.json());
 
 app.use(cors());
-//
+
 //Refactor the Get Shoes Endpoint to Handle Errors & Return Result to Client
 app.get('/shoes', async (request, response) => {
     try {
@@ -40,10 +39,28 @@ app.get('/shoes/:id', async (request, response) => {
     }
 })
 
-// app.post('/shoes', (request, response) => {
-//     redisClient.set('shoeCollection','red adidas')
-//     response.send('Shoes added!')
-// })
+
+app.post('/shoes/:id', async (request, response) => {
+    const key = `shoe:${request.params.id}`;
+    const {shoeId, model, color, size} = request.body;
+    const Shoe = {
+        shoeId,
+        color,
+        model,
+        size
+    }
+
+    try {
+        const setResult = await redisClient.set(key, JSON.stringify(Shoe));
+        console.log(`Redis set result: ${setResult}`);
+        console.log(Shoe);
+        response.send('Shoe added successfully');
+    } catch(err) {
+        console.log(`Caught an error: ${err}`);
+        console.error(err);
+        response.status(500).send(err.message);
+    }
+});
 
 
 app.get('/', (req, res) => {
